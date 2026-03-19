@@ -2,6 +2,7 @@
 #include "mhalloc.h"
 #include <stdbool.h>
 #include <unistd.h>
+#include <string.h>
 #include <assert.h>
 
 // Metadata
@@ -16,6 +17,7 @@ static mhblock_t *head = NULL; // Static to initialise values to 0
 
 #define METADATA_SIZE sizeof(mhblock_t)
 
+#pragma region Core Functions
 // Could've used a macro for this but meh
 static inline bool isBlockUsable(mhblock_t *block, size_t size)
 {
@@ -82,3 +84,23 @@ void mhfree(void *ptr)
     if (ptr) // Free pointer only if valid
         ((mhblock_t *)ptr - 1)->free = true;
 }
+#pragma endregion
+
+#pragma region Extra Functionalities
+void *mhcalloc(size_t n, size_t size)
+{
+    if (n == 0)
+        return NULL;
+    void *ptr = mhalloc(n * size);
+    if (ptr == NULL)
+        return NULL;
+    
+    memset(ptr, 0, n * size);
+    return (void *)ptr;
+}
+
+/* void *remhalloc(void *ptr, size_t newSize)
+{
+
+}*/
+#pragma endregion

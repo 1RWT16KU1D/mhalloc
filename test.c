@@ -8,11 +8,13 @@ if (ptr == NULL) \
 { \
     fprintf(stderr, "Couldn't allocate memory!\n"); \
     return EXIT_FAILURE; \
-} \
+}
+
+static int i = 0;
 
 static inline void printArray(int arr[], int num)
 {
-    for (int i = 0; i < 10; i++) printf("arr%d[%d]: %d\n", num, i, arr[i]);
+    for (i = 0; i < 10; i++) printf("arr%d[%d]: %d\n", num, i, arr[i]);
     printf("\n");
 }
 
@@ -23,7 +25,7 @@ int main(void)
     safe_mhalloc(10, int, arr2);
     safe_mhalloc(10, int, arr3);
 
-    for (int i = 0; i < 10; i++)
+    for (i = 0; i < 10; i++)
     {
         arr1[i] = i + 1;
         arr2[i] = 10 * (i + 1);
@@ -41,7 +43,7 @@ int main(void)
     mhfree(arr2);
     safe_mhalloc(10, int, arr4);
 
-    for (int i = 0; i < 10; i++) arr4[i] = 20 * (i + 1);
+    for (i = 0; i < 10; i++) arr4[i] = 20 * (i + 1);
     printArray(arr1, 1);
     printArray(arr3, 3);
     printArray(arr4, 4);
@@ -52,5 +54,10 @@ int main(void)
         printf("Test passed!\n");
     else
         printf("Test failed!\n");
+
+    printf("mhcalloc() test:\n");
+    int *arr5 = mhcalloc(10, sizeof(int));
+
+    printArray(arr5, 5);
     return 0;
 }
