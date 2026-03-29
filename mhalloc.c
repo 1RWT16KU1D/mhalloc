@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-#include <assert.h>
+#include <assert.h> // Will likely find a use for this later
 
 // Metadata
 typedef struct mhblock
