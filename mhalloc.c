@@ -1,4 +1,4 @@
-// Self-implementation of malloc()
+// Self-implementation of malloc(), free(), calloc(), realloc()
 #include "mhalloc.h"
 #include <stdbool.h>
 #include <unistd.h>
@@ -18,8 +18,7 @@ static mhblock_t *head = NULL; // Static to initialise values to 0
 #define METADATA_SIZE sizeof(mhblock_t)
 
 #pragma region Core Functions
-// Could've used a macro for this but meh
-static inline bool isBlockUsable(mhblock_t *block, size_t size)
+static inline bool isBlockUsable(mhblock_t *block, size_t size) // Could've used a macro for this but meh
 {
     return block->free && block->size >= size;
 }

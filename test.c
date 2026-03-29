@@ -14,8 +14,8 @@ static int i = 0;
 
 static inline void printArray(int arr[], int num)
 {
-    for (i = 0; i < 10; i++) printf("arr%d[%d]: %d\n", num, i, arr[i]);
-    printf("\n");
+    for (i = 0; i < 10; i++)
+        printf("arr%d[%d]: %d\n", num, i, arr[i]);
 }
 
 int main(void)
@@ -59,5 +59,9 @@ int main(void)
     int *arr5 = mhcalloc(10, sizeof(int));
 
     printArray(arr5, 5);
+    if (arr5[5] == 0)
+        printf("Test passed!\n");
+    else
+        printf("Test failed!\n");
     return 0;
 }
