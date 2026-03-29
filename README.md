@@ -1,5 +1,5 @@
 # Table of Contents
-- [What is this?](#table-of-contents)
+- [What is this?](#what-is-this)
 - [Features](#features)
 - [To-do](#to-do)
 - [What I learned](#what-i-learned)
