@@ -4,6 +4,7 @@
 #include <string.h> // For memset()
 #include <unistd.h> // For sbrk()
 #include <assert.h> // Will likely find a use for this later
+#include <stdint.h> // For SIZE_MAX
 
 // Metadata
 typedef struct mhblock
@@ -165,15 +166,22 @@ void mhfree(void *ptr)
 #pragma region Extra Functionalities
 void *mhcalloc(size_t n, size_t size)
 {
-    if (n == 0)
+    // Prevent division by zero and handle zero-size requests
+    if (n == 0 || size == 0)
         return NULL;
-    void *ptr = mhalloc(n * size);
+
+    if (n > SIZE_MAX / size)
+        return NULL;
+
+    size_t totalSize = n * size;
+    void *ptr = mhalloc(totalSize);
+    
     if (ptr == NULL)
         return NULL;
-    
-    memset(ptr, 0, n * size);
-    return (void *)ptr;
+    memset(ptr, 0, totalSize);
+    return ptr;
 }
+
 
 /* void *remhalloc(void *ptr, size_t newSize)
 {
