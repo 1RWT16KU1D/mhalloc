@@ -24,7 +24,7 @@ A custom memory allocator program for simulating `malloc()`, `free()`, `calloc()
 - Metadata is present before every memory block, and not a universal metadata for all blocks.
 - `free()` does not wipe memory, doing so would cause overhead. Instead, it messes with the block's status in the metadata.
 - `sbrk()` increases the program's 'end' or program break. It essentially makes the space your program occupies larger, and uses that extra space from the heap for allocation.
-- Doug Lea's concept suggests the use of a footer at the end of every free block, to store the size of the current block `block->size`. This is done for a faster O(1) lookup of the previous block during coalescing such that by traversing exactly `(char *)(block - FOOTER_SIZE)` bytes, we can arrive at the previous block's footer. Now, we travel exactly `FOOTER_SIZE + prevBlockSize + METADATA_SIZE` bytes behind from the current block and arrive at the previous block's metadata.
+- Doug Lea's concept suggests the use of a footer at the end of every free block, to store the size of the current block `block->size`. This is done for a faster O(1) lookup of the previous block during coalescing such that by traversing exactly `((char *)block - FOOTER_SIZE)` bytes, we can arrive at the previous block's footer. Now, we travel exactly `FOOTER_SIZE + prevBlockSize + METADATA_SIZE` bytes behind from the current block and arrive at the previous block's metadata.
 - Additionally, we add `prevFree` at the struct to keep track of if the previous block is free or not.
 
 ## Last thoughts
