@@ -55,6 +55,8 @@ static mhblock_t *tryCoalesceBackward(mhblock_t *block)
     prev->next = block->next;
     initFooter(prev);
 
+    if (prev->next)
+        prev->next->prevFree = prev->free;
     return prev;
 }
 
@@ -147,6 +149,7 @@ void mhfree(void *ptr)
     {
         mhblock_t *block = ((mhblock_t *)ptr - 1);
         block->free = true;
+        initFooter(block);
 
         if (block->next)
             block->next->prevFree = true;
