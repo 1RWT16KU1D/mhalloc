@@ -8,21 +8,29 @@
 // Metadata
 typedef struct mhblock
 {
-    size_t size;
-    bool free;
+    size_t size: 63;
+    bool free: 1;
     struct mhblock *next;
 } mhblock_t;
 
-static mhblock_t *head = NULL; // Static to initialise values to 0
-
+// Static to initialise values to 0
+static mhblock_t *head = NULL;
 #define METADATA_SIZE sizeof(mhblock_t)
+#define MIN_BLOCK_SIZE 8
 
-#pragma region Core Functions
-static inline bool isBlockUsable(mhblock_t *block, size_t size) // Could've used a macro for this but meh
+#pragma region Helper Functions // Could've used macros for these but meh
+static inline bool isBlockUsable(mhblock_t *block, size_t size)
 {
     return block->free && block->size >= size;
 }
 
+static inline bool isBlockSplittable(mhblock_t *block, size_t size)
+{
+    return block->size >= (size + METADATA_SIZE + MIN_BLOCK_SIZE);
+}
+#pragma endregion
+
+#pragma region Core Functions
 void *mhalloc(size_t size)
 {
     if (size == 0)
@@ -56,6 +64,18 @@ void *mhalloc(size_t size)
             if (isBlockUsable(curr, size))
             {
                 curr->free = false;
+
+                // Try split blocks into 2
+                if (isBlockSplittable(curr, size))
+                {
+                    mhblock_t *newBlock = (mhblock_t *)((char*)(curr + 1) + size); // Init pointer
+                    newBlock->size = curr->size - (size + METADATA_SIZE);
+                    newBlock->free = true;
+                    newBlock->next = curr->next;
+
+                    curr->size = size;
+                    curr->next = newBlock;
+                }
                 return (void *)(curr + 1);
             }
 
