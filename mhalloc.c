@@ -208,7 +208,10 @@ void *remhalloc(void *ptr, size_t newSize)
     mhblock_t *blockPtr = (mhblock_t *)ptr - 1;
 
     if (newSize <= blockPtr->size)
+    {
+        trySplitBlock(blockPtr, newSize);
         return ptr;
+    }
 
     // Check adjacent blocks first
     // Check backward
@@ -223,7 +226,7 @@ void *remhalloc(void *ptr, size_t newSize)
             prev->size += METADATA_SIZE + blockPtr->size;
             prev->next = blockPtr->next;
             prev->free = false;
-            memcpy(prev + 1, ptr, newSize);
+            memcpy(prev + 1, ptr, blockPtr->size);
             trySplitBlock(prev, newSize);
             return (void *)(prev + 1);
         }
@@ -235,7 +238,8 @@ void *remhalloc(void *ptr, size_t newSize)
     {
         if ((blockPtr->size + METADATA_SIZE + next->size) >= newSize)
         {
-            next->next->prevFree = false;
+            if (next->next)
+                next->next->prevFree = false;
             blockPtr->next = next->next;
             blockPtr->size += METADATA_SIZE + next->size;
             trySplitBlock(blockPtr, newSize);
