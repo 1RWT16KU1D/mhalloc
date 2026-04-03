@@ -10,7 +10,7 @@ A custom memory allocator program for simulating `malloc()`, `free()`, `calloc()
 
 ## Features
 - Uses `sbrk()` for requesting memory from heap.
-- Minimal metadata consisting of 3 fields: size, status (free) and a pointer to the next block.
+- Minimal metadata consisting of 4 fields: size, status (free), prevFree (free status of previous block) and a pointer to the next block.
 - Fully functional memory allocation and deallocation.
 - Uses first-fit algorithm for less overhead, though will likely cause fragmentation problems later.
 - Singly-linked list for linking memory blocks.
