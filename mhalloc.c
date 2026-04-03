@@ -46,6 +46,21 @@ static inline void initFooter(mhblock_t *block)
     footer->size = block->size;
 }
 
+static void trySplitBlock(mhblock_t *block, size_t size)
+{
+    if (isBlockSplittable(block, size))
+    {
+        mhblock_t *newBlock = (mhblock_t *)((char*)(block + 1) + size); // Init pointer
+        newBlock->size = block->size - (size + METADATA_SIZE);
+        newBlock->free = true;
+        newBlock->next = block->next;
+        initFooter(newBlock);
+
+        block->size = size;
+        block->next = newBlock;
+    }
+}
+
 static mhblock_t *tryCoalesceBackward(mhblock_t *block)
 {
     mhblock_footer_t *footer = (mhblock_footer_t *)((char *)block - FOOTER_SIZE);
@@ -109,17 +124,8 @@ void *mhalloc(size_t size)
             curr->free = false;
 
             // Try split blocks into 2
-            if (isBlockSplittable(curr, size))
-            {
-                mhblock_t *newBlock = (mhblock_t *)((char*)(curr + 1) + size); // Init pointer
-                newBlock->size = curr->size - (size + METADATA_SIZE);
-                newBlock->free = true;
-                newBlock->next = curr->next;
-                initFooter(newBlock);
+            trySplitBlock(curr, size);
 
-                curr->size = size;
-                curr->next = newBlock;
-            }
             if (curr->next)
                 curr->next->prevFree = false;
             return (void *)(curr + 1);
@@ -176,15 +182,89 @@ void *mhcalloc(size_t n, size_t size)
     size_t totalSize = n * size;
     void *ptr = mhalloc(totalSize);
     
-    if (ptr == NULL)
+    if (!ptr)
         return NULL;
     memset(ptr, 0, totalSize);
     return ptr;
 }
 
-
-/* void *remhalloc(void *ptr, size_t newSize)
+void *remhalloc(void *ptr, size_t newSize)
 {
+    if (!ptr)
+    {
+        void *newPtr = mhalloc(newSize);
+        if (newPtr)
+            return newPtr;
+        return NULL;
+    }
 
-}*/
+    if (newSize == 0)
+    {
+        mhfree(ptr);
+        return NULL;
+    }
+
+    // Normal Reallocation
+    mhblock_t *blockPtr = (mhblock_t *)(ptr - 1);
+
+    if (newSize <= blockPtr->size)
+        return ptr;
+
+    // Check adjacent blocks first
+    // Check backward
+    if (blockPtr != head && blockPtr->prevFree)
+    {
+        mhblock_footer_t *footer = (mhblock_footer_t *)((char *)blockPtr - FOOTER_SIZE);
+        size_t prevBlockSize = footer->size;
+        mhblock_t *prev = (mhblock_t *)((char *)blockPtr - prevBlockSize - METADATA_SIZE);
+
+        if ((prevBlockSize + METADATA_SIZE + blockPtr->size) >= newSize)
+        {
+            prev->size += METADATA_SIZE + blockPtr->size;
+            prev->next = blockPtr->next;
+            prev->free = false;
+            memcpy(prev + 1, ptr, newSize);
+            trySplitBlock(prev, newSize);
+            return (void *)(prev + 1);
+        }
+    }
+
+    // Check forward.If available, just merge
+    mhblock_t *next = blockPtr->next;
+    if (next && next->free)
+    {
+        if ((blockPtr->size + METADATA_SIZE + next->size) >= newSize)
+        {
+            next->next->prevFree = false;
+            blockPtr->next = next->next;
+            blockPtr->size += METADATA_SIZE + next->size;
+            mhfree(next);
+            trySplitBlock(blockPtr, newSize);
+            return (void *)(blockPtr + 1);
+        }
+    }
+
+    // Rorst case, check every other block for equivalent size
+    mhblock_t *curr = head;
+    while (curr)
+    {
+        if (curr->size >= newSize && curr->free)
+        {
+            memcpy(curr + 1, ptr, newSize);
+            curr->free = false;
+            if (curr->next)
+                curr->next->prevFree = false;
+            mhfree(ptr);
+
+            return (void *)(curr + 1);
+        }
+        curr = curr->next;
+    }
+
+    // No suitable block, assign new one
+    void *newPtr = mhalloc(newSize);
+    if (newPtr)
+        return newPtr;
+    return NULL;
+}
 #pragma endregion
