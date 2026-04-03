@@ -238,7 +238,6 @@ void *remhalloc(void *ptr, size_t newSize)
             next->next->prevFree = false;
             blockPtr->next = next->next;
             blockPtr->size += METADATA_SIZE + next->size;
-            mhfree(next);
             trySplitBlock(blockPtr, newSize);
             return (void *)(blockPtr + 1);
         }
