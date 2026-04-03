@@ -205,7 +205,7 @@ void *remhalloc(void *ptr, size_t newSize)
     }
 
     // Normal Reallocation
-    mhblock_t *blockPtr = (mhblock_t *)(ptr - 1);
+    mhblock_t *blockPtr = (mhblock_t *)ptr - 1;
 
     if (newSize <= blockPtr->size)
         return ptr;
@@ -246,11 +246,12 @@ void *remhalloc(void *ptr, size_t newSize)
 
     // Rorst case, check every other block for equivalent size
     mhblock_t *curr = head;
+    size_t oldSize = ((mhblock_t *)ptr - 1)->size;
     while (curr)
     {
         if (curr->size >= newSize && curr->free)
         {
-            memcpy(curr + 1, ptr, newSize);
+            memcpy(curr + 1, ptr, oldSize);
             curr->free = false;
             if (curr->next)
                 curr->next->prevFree = false;
@@ -264,7 +265,11 @@ void *remhalloc(void *ptr, size_t newSize)
     // No suitable block, assign new one
     void *newPtr = mhalloc(newSize);
     if (newPtr)
+    {
+        memcpy(newPtr, ptr, oldSize);
+        mhfree(ptr);
         return newPtr;
+    }
     return NULL;
 }
 #pragma endregion

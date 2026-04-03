@@ -77,5 +77,36 @@ int main(void)
         if (arr7[i] != 0) { calloc_passed = 0; break; }
     printf("mhcalloc() test: %s\n", calloc_passed ? "PASSED" : "FAILED");
 
+// remhalloc() shrink test — allocate 10 ints, shrink to 5
+    int *arr8;
+    safe_mhalloc(10, int, arr8);
+    for (i = 0; i < 10; i++) arr8[i] = i + 1;
+    
+    int *arr8_shrunk = (int *)remhalloc(arr8, 5 * sizeof(int));
+    printf("Shrink test (same address): %s\n", arr8_shrunk == arr8 ? "PASSED" : "FAILED");
+    printf("Shrink test (data preserved): %s\n", arr8_shrunk[4] == 5 ? "PASSED" : "FAILED");
+
+    // remhalloc() grow in place test — grow into adjacent free block
+    // arr8_shrunk should have a free remainder block after it from shrinking
+    int *arr8_grown = (int *)remhalloc(arr8_shrunk, 8 * sizeof(int));
+    printf("Grow test (same address): %s\n", arr8_grown == arr8_shrunk ? "PASSED" : "FAILED");
+    printf("Grow test (data preserved): %s\n", arr8_grown[4] == 5 ? "PASSED" : "FAILED");
+
+    // remhalloc() grow requiring move — no adjacent free block, must relocate
+    int *arr9;
+    safe_mhalloc(10, int, arr9); // Occupy the block after arr8_grown
+    for (i = 0; i < 10; i++) arr9[i] = i + 1;
+
+    int *arr8_moved = (int *)remhalloc(arr8_grown, 20 * sizeof(int)); // Can't grow in place
+    printf("Move test (different address): %s\n", arr8_moved != arr8_grown ? "PASSED" : "FAILED");
+    printf("Move test (data preserved): %s\n", arr8_moved[4] == 5 ? "PASSED" : "FAILED");
+
+    // remhalloc() NULL test — should behave like mhalloc
+    int *arr10 = (int *)remhalloc(NULL, 10 * sizeof(int));
+    printf("remhalloc(NULL) test: %s\n", arr10 != NULL ? "PASSED" : "FAILED");
+
+    // remhalloc() zero size test — should behave like mhfree
+    remhalloc(arr8_moved, 0);
+    printf("remhalloc(ptr, 0) test: PASSED if no crash\n");
     return 0;
 }
